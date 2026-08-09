@@ -1,15 +1,14 @@
 import http from 'node:http'
+import {call} from './functions.js'
 
 const PORT=8000
 const data =[{
   user:"salah",
   password:"123456"
 }]
-const server=http.createServer((req,res)=>{
+ export const server=http.createServer((req,res)=>{
 if(req.url=== '/api'&&req.method==='GET'){
-  res.setHeader('Content-Type','application/json')
-  res.statusCode=200
-  res.end(JSON.stringify({message:'hello world'}))
+  call(res,200,{message:'hello world'})
 }
 else if(req.url.startsWith(`/api/account/`)&&req.method==='GET'){
       const check=req.url.split('/').pop()
@@ -19,20 +18,14 @@ else if(req.url.startsWith(`/api/account/`)&&req.method==='GET'){
 
       })
       if(filtercheck.length>0){
-        res.setHeader('Content-Type','application/json')
-       res.statusCode=200
-    res.end(JSON.stringify({message:`welcome ${filtercheck[0].user} `}))
+        call(res,200,{message:`welcome ${filtercheck[0].user} `})
       }
       else{
-          res.setHeader('Content-Type','application/json')
-          res.statusCode=404
-          res.end(JSON.stringify({error:'not found',message:'not found'}))
+        call(res,404,{error:'not found',message:'not found'})
       }
 } 
 else{
-  res.setHeader('Content-Type','application/json')
-  res.statusCode=404
-  res.end(JSON.stringify({error:'not found',message:'not found'}))  
+  call(res,404,{error:'not found',message:'not found'})
 }
 
 })
