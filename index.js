@@ -1,14 +1,28 @@
 import http from 'node:http'
 import {call} from './functions.js'
+import {querychecker} from './functions.js'
 
 const PORT=8000
 const data =[{
   user:"salah",
-  password:"123456"
+  password:"123456",
+   transcation: '200$',
+  country:'turkish'
+}
+,
+{
+  user:"ahmed",
+  password:"123",
+  transcation: '200$',
+  country:'egypt'
 }]
+
  export const server=http.createServer((req,res)=>{
-if(req.url=== '/api'&&req.method==='GET'){
-  call(res,200,{message:'hello world'})
+  const urlobj=new URL(req.url,`http://${req.headers.host}`)
+  const urlquery=Object.fromEntries(urlobj.searchParams)
+if(urlobj.pathname=== '/api'&&req.method==='GET'){
+  let  filterdataparm=querychecker(data,urlquery)
+  call(res,200,filterdataparm)
 }
 else if(req.url.startsWith(`/api/account/`)&&req.method==='GET'){
       const check=req.url.split('/').pop()
@@ -32,3 +46,4 @@ else{
 server.listen(PORT,() =>{
   console.log(`server is running:${PORT}`)
 })
+
