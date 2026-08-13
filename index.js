@@ -20,7 +20,7 @@ const data =[{
  export const server=http.createServer((req,res)=>{
   const urlobj=new URL(req.url,`http://${req.headers.host}`)
   const urlquery=Object.fromEntries(urlobj.searchParams)
-if(urlobj.pathname=== '/api'&&req.method==='GET'){
+if(urlobj.pathname=== '/api'&&req.method==='GET'&&urlobj.search!=''&&(urlquery.hasOwnProperty('user') || urlquery.hasOwnProperty('country'))){
   let  filterdataparm=querychecker(data,urlquery)
   call(res,200,filterdataparm)
 }

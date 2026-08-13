@@ -1,4 +1,6 @@
 export function call(res,statusCode,message){
+  res.setHeader('Access-Control-Allow-Origin','*')
+  res.setHeader('Access-Control-Allow-Methods','GET')
   res.setHeader('Content-Type','application/json')
        res.statusCode=statusCode
     res.end(JSON.stringify(message))
@@ -15,5 +17,11 @@ export function querychecker(data,urlquery){
   }
   return true
 })
-return filterdata
+return filterdata.map((item)=>{
+  return {
+    user:item.user,
+    transcation:item.transcation,
+    country:item.country
+  }
+})
 }
