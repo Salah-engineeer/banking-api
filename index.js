@@ -1,7 +1,7 @@
 import http from 'node:http'
 import {call} from './functions.js'
 import {querychecker} from './functions.js'
-
+import path from 'node:path'
 const PORT=8000
 const data =[{
   user:"salah",
@@ -16,6 +16,8 @@ const data =[{
   transcation: '200$',
   country:'egypt'
 }]
+const dirname=import.meta.dirname
+const pathtodata=path.join(dirname,'data.js')//created a path to data.json file how to acces it i still ddidnt do it
 
  export const server=http.createServer((req,res)=>{
   const urlobj=new URL(req.url,`http://${req.headers.host}`)
