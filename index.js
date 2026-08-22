@@ -27,7 +27,7 @@ if(urlobj.pathname=== '/api'&&req.method==='GET'&&urlobj.search!=''&&(urlquery.h
   call(res,200,filterdataparm)
 }
 else if(req.url.startsWith(`/api/account/`)&&req.method==='GET'){
-      const check=req.url.split('/').pop()
+      const check=urlobj.pathname.split('/').pop()
       
       const filtercheck= data.filter((acc)=>{
        return check.toLowerCase()==acc.user.toLowerCase()
