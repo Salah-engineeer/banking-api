@@ -5,28 +5,18 @@ import {getcontnenttypes} from './functions.js'
 import {callfront} from './functions.js'
 import fs from 'node:fs/promises'
 import path from 'node:path'
+import{HandlePost} from './functions.js'
+import {getData} from './functions.js'
 const PORT=8000
-const data =[{
-  user:"salah",
-  password:"123456",
-   transcation: '200$',
-  country:'turkish'
-}
-,
-{
-  user:"ahmed",
-  password:"123",
-  transcation: '200$',
-  country:'egypt'
-}]
-const dirname=import.meta.dirname
-const pathtodata=path.join(dirname,'data.js')//created a path to data.json file how to acces it i still ddidnt do it
+
+
 
  export const server=http.createServer(async (req,res)=>{
+  const dirname=import.meta.dirname
   const urlobj=new URL(req.url,`http://${req.headers.host}`)
   const urlquery=Object.fromEntries(urlobj.searchParams)
 
- 
+ let data= await getData()
   if(urlobj.pathname=== '/api'&&req.method==='GET'&&(urlquery.hasOwnProperty('user') || urlquery.hasOwnProperty('country'))){
   let  filterdataparm=querychecker(data,urlquery)
   call(res,200,filterdataparm)
@@ -45,6 +35,10 @@ else if(req.url.startsWith(`/api/account/`)&&req.method==='GET'){
         call(res,404,{error:'not found',message:'not found'})
       }
 } 
+else if(req.url.startsWith(`/api/account/`)&&req.method==='POST'){
+ HandlePost(res,req)
+
+}
 else{
     const pathtofront=path.join(dirname,'frontend')
  const filepath=path.join(pathtofront,urlobj.pathname==='/'?'index.html':urlobj.pathname)
