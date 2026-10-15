@@ -96,25 +96,37 @@ return sanitize
 
 export async function HandlePost(res,req){
   try{
-  const clientdata=await parseBody(req)
-  const validation=validateAccount(clientdata)
-  if(!validation.valid){
-     return call(res,400,{error:'Invalid Data',message:validation.message})
+    let clientdata
+    try{
+      clientdata=await parseBody(req)
+    }
+    catch(err){
+      return call(res,400,{error:'Invalid JSON',message:err.message})
+    }
 
+    const validation=validateAccount(clientdata)
+    if(!validation.valid){
+      return call(res,400,{error:'Invalid Data',message:validation.message})
+    }
+    else{
+      const cleanAccount={
+        user: clientdata.user.trim(),
+        transcation: clientdata.transcation.trim(),
+        country: clientdata.country.trim().toLowerCase(),
+        password: clientdata.password.trim()
+      }
+
+      const sanitizedData=await sanitizeData(cleanAccount)
+      const data=await getData()
+      data.push(sanitizedData)
+      await fs.writeFile(path.join(import.meta.dirname,'data.json'),JSON.stringify(data,null,2),'utf-8')
+      call(res,201,{message:'data added successfully'})
+    }
   }
-  else{
-    clientdata.country=clientdata.country.trim().toLowerCase()
-  const sanitizedData=await sanitizeData(clientdata)
-  const data =await getData()
-  data.push(sanitizedData)
-   await fs.writeFile(path.join(import.meta.dirname,'data.json'),JSON.stringify(data,null,2),'utf-8')
-   call(res,201,{message:'data added successfully'})
-}
+  catch(err){
+    console.log(err)
+    call(res,500,{error:'Internal Server Error',message:err.message})
   }
-catch(err){
-console.log(err)
-call(res,500,{error:'Internal Server Error',message:err.message}) 
-}
 }
 export function validateAccount(data){
    const allowedCountries=['egypt','turkey','germany','usa']
