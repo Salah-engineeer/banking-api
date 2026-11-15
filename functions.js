@@ -1,6 +1,7 @@
 import sanitizeHtml from 'sanitize-html'
 import path from 'path'
 import fs from 'fs/promises'
+import{eventEmitter} from './events.js'
 export function call(res,statusCode,message){
   res.setHeader('Access-Control-Allow-Origin','*')
   res.setHeader('Access-Control-Allow-Methods','GET')
@@ -120,7 +121,15 @@ export async function HandlePost(res,req){
       const data=await getData()
       data.push(sanitizedData)
       await fs.writeFile(path.join(import.meta.dirname,'data.json'),JSON.stringify(data,null,2),'utf-8')
+      try{
+         eventEmitter.emit('account created', 
+        {"user":sanitizedData.user} 
+  );
+      }catch(err){
+        console.log('Error emitting event:', err);
+      }
       call(res,201,{message:'data added successfully'})
+    
     }
   }
   catch(err){

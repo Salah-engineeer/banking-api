@@ -5,6 +5,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
+      "dev": "nodemon --ignore data.json index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -13,5 +14,8 @@
   "dependencies": {
     "i18n-iso-countries": "^7.14.0",
     "sanitize-html": "^2.18.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
   }
 }
