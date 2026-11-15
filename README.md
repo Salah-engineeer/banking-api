@@ -17,7 +17,7 @@ the start.
 - Only approved fields are saved, so extra fields a client sends are dropped
 - Passwords never returned in responses
 
-Security reasoning for every feature is in [SECURITY_NOTES.md](SECURITY_NOTES.md),
+Security reasoning for every feature is in [SECURITY_NOTES.md](Security_Notes.md),
 including the known gaps I haven't fixed yet.
 
 ## Tech

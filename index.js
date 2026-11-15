@@ -12,6 +12,7 @@ const PORT=8000
 
 
  export const server=http.createServer(async (req,res)=>{
+  try{
   const dirname=import.meta.dirname
   const urlobj=new URL(req.url,`http://${req.headers.host}`)
   const urlquery=Object.fromEntries(urlobj.searchParams)
@@ -20,6 +21,7 @@ const PORT=8000
   if(urlobj.pathname=== '/api'&&req.method==='GET'&&(urlquery.hasOwnProperty('user') || urlquery.hasOwnProperty('country'))){
   let  filterdataparm=querychecker(data,urlquery)
   call(res,200,filterdataparm)
+
 }
 else if(req.url.startsWith(`/api/account/`)&&req.method==='GET'){
       const check=urlobj.pathname.split('/').pop()
@@ -30,13 +32,14 @@ else if(req.url.startsWith(`/api/account/`)&&req.method==='GET'){
       })
       if(filtercheck.length>0){
         call(res,200,{message:`welcome ${filtercheck[0].user} `})
+        
       }
       else{
         call(res,404,{error:'not found',message:'not found'})
       }
 } 
 else if(req.url.startsWith(`/api/account/`)&&req.method==='POST'){
- HandlePost(res,req)
+ await HandlePost(res,req)
 
 }
 else{
@@ -55,10 +58,21 @@ else{
         callfront(res,404,'text/html',await fs.readFile(path.join(pathtofront,'404.html')))
       }
       else{
-        callfront(res,500,'text/html', `<html><h1>Server Error: ${err.code}</h1></html>`)
+            callfront(res,500,'text/html','<html><h1>Server Error</h1></html>')
       }
 
 }
+}
+ }
+ catch(err){
+  console.log(err)
+  if(!res.headersSent){
+  call(res,500,{error:'server error',message:'internal server error'})
+ }
+ else{
+  if(!res.writableEnded)
+  res.end()
+ }
 }
 })
 server.listen(PORT,() =>{

@@ -102,7 +102,7 @@ export async function HandlePost(res,req){
       clientdata=await parseBody(req)
     }
     catch(err){
-      return call(res,400,{error:'Invalid JSON',message:err.message})
+      return call(res,400,{error:'Invalid JSON', message:'request body must be valid JSON'})
     }
 
     const validation=validateAccount(clientdata)
@@ -134,7 +134,7 @@ export async function HandlePost(res,req){
   }
   catch(err){
     console.log(err)
-    call(res,500,{error:'Internal Server Error',message:err.message})
+    call(res,500,{error:'Internal Server Error',message:'something went wrong on our side'})
   }
 }
 export function validateAccount(data){

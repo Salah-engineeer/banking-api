@@ -53,3 +53,44 @@ plain text. They must be hashed with bcrypt once auth is built.
  -Password regex restricts allowed characters; length matters more than symbol rules in real systems.
 -Passwords are stored in plain text; must be hashed (bcrypt) before any real login feature.
 -startsWith('/api/account/') is loose; a POST to /api/account/bob also creates an account
+
+
+## Server crash safety net (Nov 15)
+One bad request could crash the whole server (DoS). Causes I found and fixed:
+
+1. Unhandled errors in the async request handler. new URL(req.url, host)
+throws on a malformed Host header (e.g. "Host: a b"). The handler is async,
+so the throw became an unhandled promise rejection, and Node 15+ kills the
+process on those. Fix: wrapped the whole handler body in try/catch.
+2. HandlePost was called without await. try/catch only protects code the
+try block waits for, so a throw outside HandlePost's own try escaped the net
+and crashed the server. Fix: await HandlePost(res, req).
+3. The catch itself could crash. It always called call(res, 500), but if a
+response was already sent, res.setHeader throws ERR_HTTP_HEADERS_SENT inside
+the catch and nothing catches that. I reproduced it with a throw right after
+a successful call(res, 200). Fix: check res.headersSent first. If false, send
+the 500. If true, send nothing new and only call res.end() when
+res.writableEnded is false.
+4. Error details leaked to the client. err.message and err.code can reveal
+file paths, the OS and how the code is built. Fix: the client always gets a
+fixed generic message, and the real error only goes to console.log.
+
+Related data-loss bug: getData() returned [] on any error, so a corrupt
+data.json looked like "no accounts", and the next POST overwrote the file and
+wiped every account. Fix: only a missing file (ENOENT) returns []. Any other
+error is rethrown, the client gets a 500 and data.json is untouched.
+
+Event listeners run synchronously inside emit(), so a throwing listener
+travels back into HandlePost. The emit is wrapped in its own try/catch so a
+broken log listener can't turn a saved account into a failed request.
+
+Checked: a bad Host header returns 500 and the server stays up, a throw at
+the top of HandlePost returns a 500 response, and a throwing listener doesn't
+stop the POST.
+Known gaps: the "response already sent" branch of the catch is not retested
+after the fix yet. getData() runs at the top of every request, so a corrupt
+or empty (0 byte) data.json makes even static files return 500 (it should
+only be called in the routes that need it, and an empty file must contain []).
+There is no process-level unhandledRejection / uncaughtException backup yet.
+HandlePost's own catch has no headersSent check, and the outer catch covers
+it only because of the await.
