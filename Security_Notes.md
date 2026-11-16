@@ -75,10 +75,10 @@ res.writableEnded is false.
 file paths, the OS and how the code is built. Fix: the client always gets a
 fixed generic message, and the real error only goes to console.log.
 
-Related data-loss bug: getData() returned [] on any error, so a corrupt
-data.json looked like "no accounts", and the next POST overwrote the file and
-wiped every account. Fix: only a missing file (ENOENT) returns []. Any other
-error is rethrown, the client gets a 500 and data.json is untouched.
+Known data-loss bug (not fixed yet): getData() returns [] on any error, so a
+corrupt data.json looks like "no accounts", and the next POST overwrites the
+file and wipes every account. Planned fix: only a missing file (ENOENT)
+returns []; any other error is rethrown.
 
 Event listeners run synchronously inside emit(), so a throwing listener
 travels back into HandlePost. The emit is wrapped in its own try/catch so a
@@ -88,9 +88,27 @@ Checked: a bad Host header returns 500 and the server stays up, a throw at
 the top of HandlePost returns a 500 response, and a throwing listener doesn't
 stop the POST.
 Known gaps: the "response already sent" branch of the catch is not retested
-after the fix yet. getData() runs at the top of every request, so a corrupt
-or empty (0 byte) data.json makes even static files return 500 (it should
-only be called in the routes that need it, and an empty file must contain []).
+after the fix yet. 
 There is no process-level unhandledRejection / uncaughtException backup yet.
 HandlePost's own catch has no headersSent check, and the outer catch covers
 it only because of the await.
+
+## hasOwnProperty shadowing in query params (Nov 16)
+The /api route turned the query string into a plain object with
+Object.fromEntries(searchParams) and then called urlquery.hasOwnProperty('user').
+The visitor chooses the key names, so /api?hasOwnProperty=x put an own key with
+that name on the object. JavaScript checks an object's own keys before its
+inherited methods, so the key hid the real method and the call threw "is not a
+function". A visitor could make any /api request fail on purpose. The Nov 15
+safety net turned the crash into a 500, but the cause was still there.
+It is the same family as prototype pollution (user text used as a property
+name), but this is shadowing, not pollution: nothing on Object.prototype changes.
+Fix: replaced all 4 calls (the /api gate in index.js and 2 in querychecker) with
+Object.hasOwn(urlquery, 'key'). It asks the built-in Object instead of the
+visitor's object, so a visitor key can't hide it. Rule: text from a visitor must
+only be data, never decide which function runs.
+Checked: /api?hasOwnProperty=x returns the 404 page, and
+/api?user=ahmed&hasOwnProperty=x and /api?user=ahmed&country=egypt still return
+ahmed's account.
+Known gaps: /api?country= (key present, empty value) returns 200 and [] because
+the check only looks at the key, not the value.

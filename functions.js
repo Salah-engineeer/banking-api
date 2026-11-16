@@ -19,11 +19,11 @@ export function callfront(res,statusCode,contenttype,filepath){
 }
 export function querychecker(data,urlquery){
   const filterdata=data.filter((item)=>{
-    if(urlquery.hasOwnProperty('user') &&
+    if(Object.hasOwn(urlquery,"user") &&
   item.user!==urlquery.user){
     return false
   }
-  if(urlquery.hasOwnProperty('country') &&
+  if(Object.hasOwn(urlquery,'country') &&
   item.country!==urlquery.country.toLowerCase()){
     return false
   }

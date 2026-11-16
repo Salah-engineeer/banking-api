@@ -18,7 +18,7 @@ const PORT=8000
   const urlquery=Object.fromEntries(urlobj.searchParams)
 
  let data= await getData()
-  if(urlobj.pathname=== '/api'&&req.method==='GET'&&(urlquery.hasOwnProperty('user') || urlquery.hasOwnProperty('country'))){
+  if(urlobj.pathname=== '/api'&&req.method==='GET'&&(Object.hasOwn(urlquery,'user') || Object.hasOwn(urlquery,'country'))){
   let  filterdataparm=querychecker(data,urlquery)
   call(res,200,filterdataparm)
 
