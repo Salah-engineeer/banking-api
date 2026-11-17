@@ -131,3 +131,29 @@ data.json makes even static files return 500 (it should only be called in the
 routes that need it). writeFile is not atomic, so a crash in the middle of a
 write can leave a half-written file, which now makes every request return 500
 until it is fixed by hand (safer: write a temp file, then rename it).
+
+
+sanitizeData() looped over every string field and ran sanitizeHtml on it,
+password included. sanitizeHtml does not only strip tags, it parses the string
+and writes it back out as HTML, so a bare & became &amp;. A password of
+abc&def123 was saved as abc&amp;def123. The stored value was no longer what the
+user typed, so login would never have matched once I add it.
+Cause: sanitizing is output encoding for one destination (HTML shown in a
+browser). I applied it to the whole object instead of per field. A password is
+never rendered as HTML, it is only hashed and compared, so changing it is a bug,
+not protection. Tuning allowedTags/allowedAttributes can't help, because the &
+escaping happens at the output step either way.
+Fix: password is no longer in cleanAccount, so it skips sanitizeData. After
+sanitizing, HandlePost builds a new object (accountfully) from the sanitized
+user, transcation and country plus clientdata.password.trim(), and pushes that.
+The password is protected by validation (passwordRegex allowlist, 8-64 chars),
+not by sanitizing. Rule: validate on input, encode on output for the specific
+place the value goes, and never change a secret.
+Checked: abc&def123 is stored as abc&def123 and grep for &amp; in data.json
+finds nothing. 400 for < > in the password, a 7 character password, a missing
+password, a <script> username and a country not in the allowlist, and data.json
+was unchanged after those rejected requests.
+Known gaps: passwords are still plain text (bcrypt in December, and the hash
+replaces password: in accountfully). No duplicate username check. Two
+simultaneous POSTs can still corrupt data.json (read, push, write), which is the
+likely cause of the earlier "Unexpected non-whitespace character" error.

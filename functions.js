@@ -119,12 +119,18 @@ export async function HandlePost(res,req){
         user: clientdata.user.trim(),
         transcation: clientdata.transcation.trim(),
         country: clientdata.country.trim().toLowerCase(),
-        password: clientdata.password.trim()
       }
 
       const sanitizedData=await sanitizeData(cleanAccount)
-      const data=await getData()
-      data.push(sanitizedData)
+      const data =await getData()
+      const accountfully={
+        user:sanitizedData.user,
+        transcation:sanitizedData.transcation,
+        country:sanitizedData.country,
+        password:clientdata.password.trim()
+      }
+      data.push(accountfully)
+
       await fs.writeFile(path.join(import.meta.dirname,'data.json'),JSON.stringify(data,null,2),'utf-8')
       try{
          eventEmitter.emit('account created', 
