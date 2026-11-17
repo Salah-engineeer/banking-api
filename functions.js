@@ -71,11 +71,16 @@ export async function getData(){
   const dirname=import.meta.dirname
   const pathtodata=path.join(dirname,'data.json')
   const data =await fs.readFile(pathtodata,'utf-8')
+  if(data.trim()===''){
+    return []
+  }  
   return JSON.parse(data)
-}
-catch(err){
-  console.log(err)
-  return [];
+  }
+  catch(err){
+    if(err.code==='ENOENT'){
+      return []
+    }
+throw new Error('data.json could not be read', { cause: err })
 }
 }
 

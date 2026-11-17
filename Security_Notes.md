@@ -75,10 +75,7 @@ res.writableEnded is false.
 file paths, the OS and how the code is built. Fix: the client always gets a
 fixed generic message, and the real error only goes to console.log.
 
-Known data-loss bug (not fixed yet): getData() returns [] on any error, so a
-corrupt data.json looks like "no accounts", and the next POST overwrites the
-file and wipes every account. Planned fix: only a missing file (ENOENT)
-returns []; any other error is rethrown.
+Known data-loss bug (not fixed yet): 
 
 Event listeners run synchronously inside emit(), so a throwing listener
 travels back into HandlePost. The emit is wrapped in its own try/catch so a
@@ -112,3 +109,25 @@ Checked: /api?hasOwnProperty=x returns the 404 page, and
 ahmed's account.
 Known gaps: /api?country= (key present, empty value) returns 200 and [] because
 the check only looks at the key, not the value.
+
+## getData silent failure / data loss (Nov 17)
+getData() caught every error and logged it, and an earlier version returned
+[] for all of them. A missing data.json and a failed read looked the same, so
+a corrupt or unreadable file was treated as "no accounts". The next POST then
+did push + writeFile on that empty list and overwrote data.json, wiping every
+account, while the client still got a 201.
+Fix: the catch now tells error kinds apart. Only a missing file (err.code is
+ENOENT) means "no accounts yet" and returns []. An empty (0 byte) file also
+returns []. Any other error (corrupt JSON, permissions) is thrown again, so
+the outer catch in index.js sends the generic 500 and data.json is not
+touched. Rules: a function either returns the right value or throws, it must
+never swallow an error and hand back something that looks valid; and a data
+function must not answer HTTP, the caller decides what the client sees.
+Checked: with {{{ in data.json a request returns 500 and the file is
+unchanged; with data.json deleted a valid POST returns 201 and creates the
+file with one account; with an empty file a valid POST returns 201.
+Known gaps: index.js calls getData() at the top of every request, so a corrupt
+data.json makes even static files return 500 (it should only be called in the
+routes that need it). writeFile is not atomic, so a crash in the middle of a
+write can leave a half-written file, which now makes every request return 500
+until it is fixed by hand (safer: write a temp file, then rename it).
